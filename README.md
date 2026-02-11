@@ -20,3 +20,14 @@ Language-by-language API playground.
    ```bash
    docker compose down
    ```
+
+## Seed Database
+1. Ensure Postgres is running on port `5440` (default from `.env.example`).
+2. Run the seed script:
+   ```bash
+   ./db/seed.sh
+   ```
+
+This creates `bill` and `bill_line`, then inserts:
+- 100 bills
+- 10-15 bill lines per bill
