@@ -36,7 +36,8 @@ Runs all APIs with the same load profile and prints a side-by-side summary:
 - `Go Minimal`: `/bills-minimal`
 - `Go DDD`: `/bills`
 
-`run_compare.sh` now executes multiple rounds with randomized endpoint order and reports median metrics.
+`run_compare.sh` executes multiple rounds with randomized endpoint order and reports median GET metrics.
+It can also run POST benchmarks in table format across configured targets (`.NET`, `Python`, `Go`), creating tagged bills and auto-cleaning them.
 
 ```bash
 ./run_compare.sh
@@ -45,6 +46,26 @@ Runs all APIs with the same load profile and prints a side-by-side summary:
 Optional overrides:
 ```bash
 REQUESTS=1000 CONCURRENCY=50 WARMUP_REQUESTS=50 ROUNDS=7 ./run_compare.sh
+```
+
+Disable POST benchmark:
+```bash
+RUN_POST_BENCHMARK=0 ./run_compare.sh
+```
+
+Tune POST benchmark:
+```bash
+POST_ROUNDS=3 \
+POST_REQUESTS=10 \
+POST_CONCURRENCY=5 \
+POST_MIN_LINES=10 \
+POST_MAX_LINES=15 \
+POST_DB_HOST=localhost \
+POST_DB_PORT=5440 \
+POST_DOTNET_URL=http://localhost:5080/bills \
+POST_PYTHON_URL=http://localhost:5081/bills \
+POST_GO_URL=http://localhost:5082/bills \
+./run_compare.sh
 ```
 
 Custom URLs:
@@ -67,3 +88,25 @@ python benchmark.py \
   --header "Authorization: Bearer TOKEN" \
   --payload-file ./payload.json
 ```
+
+## Dedicated POST benchmark runner
+```bash
+python benchmark_dotnet_post.py \
+  --name ".NET-Post" \
+  --url http://localhost:5080/bills \
+  --requests 10 \
+  --concurrency 5 \
+  --min-lines 10 \
+  --max-lines 15 \
+  --db-host localhost \
+  --db-port 5440 \
+  --db-name api_lang_arena \
+  --db-user api_lang_user \
+  --db-password api_lang_password
+```
+
+It generates unique `billNumber`/`customerName` values with a benchmark prefix, then deletes created rows after the run.
+
+## Metric caveat
+- GET metrics are useful for read-path comparison across stacks.
+- For POST with only 10 requests, `p95` and `p99` are directionally useful but statistically noisy. Use larger request counts (for example 100-500) when you need stable tail-latency conclusions.

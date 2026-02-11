@@ -1,4 +1,6 @@
+using BillsApi.Application.Bills.CreateBill;
 using BillsApi.Application.Bills.GetBills;
+using BillsApi.Presentation.Contracts;
 using MediatR;
 using Npgsql;
 
@@ -45,6 +47,20 @@ public static class BillsEndpoints
         {
             var result = await sender.Send(new GetBillsQuery(), ct);
             return Results.Ok(result);
+        });
+
+        app.MapPost("/bills", async (CreateBillRequest request, ISender sender, CancellationToken ct) =>
+        {
+            var command = new CreateBillCommand(
+                request.BillNumber,
+                request.IssuedAt,
+                request.CustomerName,
+                request.Currency,
+                request.Tax,
+                request.Lines.Select(x => new CreateBillLineInput(x.Concept, x.Quantity, x.UnitAmount)).ToList());
+
+            var result = await sender.Send(command, ct);
+            return Results.Created($"/bills/{result.Id}", result);
         });
 
         return app;

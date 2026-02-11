@@ -37,6 +37,21 @@ CONCURRENCY="${CONCURRENCY:-25}"
 WARMUP_REQUESTS="${WARMUP_REQUESTS:-20}"
 TIMEOUT_SEC="${TIMEOUT_SEC:-10}"
 ROUNDS="${ROUNDS:-5}"
+RUN_POST_BENCHMARK="${RUN_POST_BENCHMARK:-1}"
+POST_ROUNDS="${POST_ROUNDS:-1}"
+POST_REQUESTS="${POST_REQUESTS:-10}"
+POST_CONCURRENCY="${POST_CONCURRENCY:-5}"
+POST_TIMEOUT_SEC="${POST_TIMEOUT_SEC:-10}"
+POST_MIN_LINES="${POST_MIN_LINES:-10}"
+POST_MAX_LINES="${POST_MAX_LINES:-15}"
+POST_DB_HOST="${POST_DB_HOST:-localhost}"
+POST_DB_PORT="${POST_DB_PORT:-${POSTGRES_PORT:-5440}}"
+POST_DB_NAME="${POST_DB_NAME:-${POSTGRES_DB:-api_lang_arena}}"
+POST_DB_USER="${POST_DB_USER:-${POSTGRES_USER:-api_lang_user}}"
+POST_DB_PASSWORD="${POST_DB_PASSWORD:-${POSTGRES_PASSWORD:-api_lang_password}}"
+POST_DOTNET_URL="${POST_DOTNET_URL:-http://localhost:5080/bills}"
+POST_PYTHON_URL="${POST_PYTHON_URL:-}"
+POST_GO_URL="${POST_GO_URL:-}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
 "${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" "${REQUESTS}" "${CONCURRENCY}" "${WARMUP_REQUESTS}" "${TIMEOUT_SEC}" "${ROUNDS}" "${DOTNET_MINIMAL_URL}" "${DOTNET_DDD_URL}" "${PYTHON_MINIMAL_URL}" "${PYTHON_DDD_URL}" "${GO_MINIMAL_URL}" "${GO_DDD_URL}" <<'PY'
@@ -141,3 +156,122 @@ print(f"Throughput winner: {winner_thr}")
 print(f"P95 latency winner: {winner_p95}")
 print(f"P99 latency winner: {winner_p99}")
 PY
+
+if [[ "${RUN_POST_BENCHMARK}" == "1" ]]; then
+  echo
+  "${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" \
+    "${POST_ROUNDS}" "${POST_REQUESTS}" "${POST_CONCURRENCY}" "${POST_TIMEOUT_SEC}" \
+    "${POST_MIN_LINES}" "${POST_MAX_LINES}" "${POST_DB_HOST}" "${POST_DB_PORT}" \
+    "${POST_DB_NAME}" "${POST_DB_USER}" "${POST_DB_PASSWORD}" \
+    "${POST_DOTNET_URL}" "${POST_PYTHON_URL}" "${POST_GO_URL}" <<'PY'
+import json
+import random
+import statistics
+import subprocess
+import sys
+from pathlib import Path
+
+(
+    python_bin,
+    script_dir,
+    reports_dir,
+    ts,
+    rounds,
+    requests,
+    concurrency,
+    timeout_sec,
+    min_lines,
+    max_lines,
+    db_host,
+    db_port,
+    db_name,
+    db_user,
+    db_password,
+    dotnet_url,
+    python_url,
+    go_url,
+) = sys.argv[1:19]
+
+rounds = int(rounds)
+requests = int(requests)
+concurrency = int(concurrency)
+timeout_sec = float(timeout_sec)
+min_lines = int(min_lines)
+max_lines = int(max_lines)
+
+targets = [
+    ("dotnet-post", ".NET-Post", dotnet_url),
+    ("python-post", "Py-Post", python_url),
+    ("go-post", "Go-Post", go_url),
+]
+targets = [item for item in targets if item[2].strip()]
+
+if not targets:
+    print("POST comparison skipped: no POST_*_URL values configured.")
+    raise SystemExit(0)
+
+metrics = {
+    label: {"throughput": [], "success_rate": [], "created_rate": [], "avg": [], "p95": [], "p99": []}
+    for _, label, _ in targets
+}
+
+for round_idx in range(1, rounds + 1):
+    order = list(targets)
+    random.shuffle(order)
+    print(f"POST round {round_idx}/{rounds} order: " + ", ".join(label for _, label, _ in order))
+    for key, label, url in order:
+        report_path = Path(reports_dir) / f"{key}-r{round_idx}-{ts}.json"
+        prefix = f"BENCH-{key.upper()}-{ts}-R{round_idx}"
+        cmd = [
+            python_bin,
+            str(Path(script_dir) / "benchmark_dotnet_post.py"),
+            "--name", label,
+            "--url", url,
+            "--requests", str(requests),
+            "--concurrency", str(concurrency),
+            "--timeout-sec", str(timeout_sec),
+            "--min-lines", str(min_lines),
+            "--max-lines", str(max_lines),
+            "--prefix", prefix,
+            "--db-host", db_host,
+            "--db-port", db_port,
+            "--db-name", db_name,
+            "--db-user", db_user,
+            "--db-password", db_password,
+            "--quiet",
+            "--output-json", str(report_path),
+        ]
+        subprocess.run(cmd, check=True)
+        with report_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        summary = data["summary"]
+        latency = data["latency_ms"]
+        metrics[label]["throughput"].append(float(summary["throughput_req_per_sec"]))
+        metrics[label]["success_rate"].append(float(summary["success_rate_pct"]))
+        metrics[label]["created_rate"].append(float(summary["created_rate_pct"]))
+        metrics[label]["avg"].append(float(latency["avg"]))
+        metrics[label]["p95"].append(float(latency["p95"]))
+        metrics[label]["p99"].append(float(latency["p99"]))
+
+rows = []
+for _, label, _ in targets:
+    rows.append({
+        "name": label,
+        "throughput": round(statistics.median(metrics[label]["throughput"]), 2),
+        "success_rate": round(statistics.median(metrics[label]["success_rate"]), 2),
+        "created_rate": round(statistics.median(metrics[label]["created_rate"]), 2),
+        "avg": round(statistics.median(metrics[label]["avg"]), 2),
+        "p95": round(statistics.median(metrics[label]["p95"]), 2),
+        "p99": round(statistics.median(metrics[label]["p99"]), 2),
+    })
+
+print()
+print("POST comparison (median across rounds):")
+print(f"{'API':<10} {'Throughput':>12} {'Success%':>10} {'Created%':>10} {'Avg ms':>10} {'P95 ms':>10} {'P99 ms':>10}")
+for row in rows:
+    print(
+        f"{row['name']:<10} {row['throughput']:>12} {row['success_rate']:>10} "
+        f"{row['created_rate']:>10} {row['avg']:>10} {row['p95']:>10} {row['p99']:>10}"
+    )
+PY
+fi

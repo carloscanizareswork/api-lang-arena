@@ -1,7 +1,14 @@
+using BillsApi.Application.Abstractions.Messaging;
+using BillsApi.Application.Abstractions.Validation;
 using BillsApi.Application.Bills.GetBills;
 using BillsApi.Domain.Bills;
+using BillsApi.Domain.Common;
+using BillsApi.Infrastructure.Messaging;
 using BillsApi.Infrastructure.Persistence;
 using BillsApi.Presentation.Endpoints;
+using BillsApi.Presentation.Middleware;
+using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -14,10 +21,18 @@ builder.Services.AddDbContext<ArenaDbContext>(options => options.UseNpgsql(conne
 
 builder.Services.AddScoped<IBillRepository, BillRepository>();
 builder.Services.AddScoped<IGetBillsReadRepository, GetBillsReadRepository>();
+builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ArenaDbContext>());
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetBillsQuery).Assembly));
+builder.Services.AddValidatorsFromAssembly(typeof(GetBillsQuery).Assembly);
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+builder.Services.AddSingleton(BuildRabbitMqOptions(builder.Configuration));
+builder.Services.AddSingleton<IIntegrationEventPublisher, RabbitMqIntegrationEventPublisher>();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.MapGet("/", () => Results.Ok(new { service = "dot-net-bills-api", status = "ok" }));
 app.MapBillsEndpoints();
@@ -33,4 +48,17 @@ static string BuildConnectionString(IConfiguration configuration)
     var password = configuration["POSTGRES_PASSWORD"] ?? "api_lang_password";
 
     return $"Host={host};Port={port};Database={db};Username={user};Password={password}";
+}
+
+static RabbitMqOptions BuildRabbitMqOptions(IConfiguration configuration)
+{
+    return new RabbitMqOptions
+    {
+        HostName = configuration["RABBITMQ_HOST"] ?? "localhost",
+        Port = int.TryParse(configuration["RABBITMQ_PORT"], out var port) ? port : 5672,
+        UserName = configuration["RABBITMQ_USER"] ?? "guest",
+        Password = configuration["RABBITMQ_PASSWORD"] ?? "guest",
+        VirtualHost = configuration["RABBITMQ_VHOST"] ?? "/",
+        BillCreatedQueueName = configuration["RABBITMQ_BILL_CREATED_QUEUE"] ?? "bill-created"
+    };
 }

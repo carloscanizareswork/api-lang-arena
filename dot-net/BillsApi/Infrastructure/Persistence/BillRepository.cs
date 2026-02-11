@@ -13,4 +13,14 @@ public sealed class BillRepository(ArenaDbContext dbContext) : IBillRepository
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
     }
+
+    public Task<bool> ExistsByBillNumberAsync(string billNumber, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Bills.AsNoTracking().AnyAsync(x => x.BillNumber == billNumber, cancellationToken);
+    }
+
+    public async Task AddAsync(Bill bill, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Bills.AddAsync(bill, cancellationToken);
+    }
 }

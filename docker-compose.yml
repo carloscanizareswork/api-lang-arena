@@ -17,6 +17,23 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: api-lang-arena-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   dotnet-api:
     build:
       context: ./dot-net/BillsApi
@@ -30,10 +47,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
       POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      RABBITMQ_BILL_CREATED_QUEUE: ${RABBITMQ_BILL_CREATED_QUEUE:-bill-created}
     ports:
       - "${DOTNET_API_PORT:-5080}:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   python-api:
