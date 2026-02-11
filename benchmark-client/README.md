@@ -33,6 +33,10 @@ Runs all APIs with the same load profile and prints a side-by-side summary:
 - `.NET DDD`: `/bills`
 - `Python Minimal`: `/bills-minimal`
 - `Python DDD`: `/bills`
+- `Go Minimal`: `/bills-minimal`
+- `Go DDD`: `/bills`
+
+`run_compare.sh` now executes multiple rounds with randomized endpoint order and reports median metrics.
 
 ```bash
 ./run_compare.sh
@@ -40,7 +44,7 @@ Runs all APIs with the same load profile and prints a side-by-side summary:
 
 Optional overrides:
 ```bash
-REQUESTS=1000 CONCURRENCY=50 WARMUP_REQUESTS=50 ./run_compare.sh
+REQUESTS=1000 CONCURRENCY=50 WARMUP_REQUESTS=50 ROUNDS=7 ./run_compare.sh
 ```
 
 Custom URLs:
@@ -49,6 +53,8 @@ DOTNET_MINIMAL_URL=http://localhost:5080/bills-minimal \
 DOTNET_DDD_URL=http://localhost:5080/bills \
 PYTHON_MINIMAL_URL=http://localhost:5081/bills-minimal \
 PYTHON_DDD_URL=http://localhost:5081/bills \
+GO_MINIMAL_URL=http://localhost:5082/bills-minimal \
+GO_DDD_URL=http://localhost:5082/bills \
 ./run_compare.sh
 ```
 

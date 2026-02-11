@@ -30,99 +30,108 @@ DOTNET_MINIMAL_URL="${DOTNET_MINIMAL_URL:-http://localhost:5080/bills-minimal}"
 DOTNET_DDD_URL="${DOTNET_DDD_URL:-http://localhost:5080/bills}"
 PYTHON_MINIMAL_URL="${PYTHON_MINIMAL_URL:-http://localhost:5081/bills-minimal}"
 PYTHON_DDD_URL="${PYTHON_DDD_URL:-http://localhost:5081/bills}"
+GO_MINIMAL_URL="${GO_MINIMAL_URL:-http://localhost:5082/bills-minimal}"
+GO_DDD_URL="${GO_DDD_URL:-http://localhost:5082/bills}"
 REQUESTS="${REQUESTS:-500}"
 CONCURRENCY="${CONCURRENCY:-25}"
 WARMUP_REQUESTS="${WARMUP_REQUESTS:-20}"
 TIMEOUT_SEC="${TIMEOUT_SEC:-10}"
+ROUNDS="${ROUNDS:-5}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
-DOTNET_MINIMAL_REPORT="${REPORTS_DIR}/dotnet-minimal-${TS}.json"
-DOTNET_DDD_REPORT="${REPORTS_DIR}/dotnet-ddd-${TS}.json"
-PYTHON_MINIMAL_REPORT="${REPORTS_DIR}/python-minimal-${TS}.json"
-PYTHON_DDD_REPORT="${REPORTS_DIR}/python-ddd-${TS}.json"
-
-echo "Running .NET Minimal benchmark..."
-"${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark.py" \
-  --url "${DOTNET_MINIMAL_URL}" \
-  --requests "${REQUESTS}" \
-  --concurrency "${CONCURRENCY}" \
-  --warmup-requests "${WARMUP_REQUESTS}" \
-  --timeout-sec "${TIMEOUT_SEC}" \
-  --output-json "${DOTNET_MINIMAL_REPORT}" >/dev/null
-
-echo "Running .NET DDD benchmark..."
-"${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark.py" \
-  --url "${DOTNET_DDD_URL}" \
-  --requests "${REQUESTS}" \
-  --concurrency "${CONCURRENCY}" \
-  --warmup-requests "${WARMUP_REQUESTS}" \
-  --timeout-sec "${TIMEOUT_SEC}" \
-  --output-json "${DOTNET_DDD_REPORT}" >/dev/null
-
-echo "Running Python Minimal benchmark..."
-"${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark.py" \
-  --url "${PYTHON_MINIMAL_URL}" \
-  --requests "${REQUESTS}" \
-  --concurrency "${CONCURRENCY}" \
-  --warmup-requests "${WARMUP_REQUESTS}" \
-  --timeout-sec "${TIMEOUT_SEC}" \
-  --output-json "${PYTHON_MINIMAL_REPORT}" >/dev/null
-
-echo "Running Python DDD benchmark..."
-"${PYTHON_BIN}" "${SCRIPT_DIR}/benchmark.py" \
-  --url "${PYTHON_DDD_URL}" \
-  --requests "${REQUESTS}" \
-  --concurrency "${CONCURRENCY}" \
-  --warmup-requests "${WARMUP_REQUESTS}" \
-  --timeout-sec "${TIMEOUT_SEC}" \
-  --output-json "${PYTHON_DDD_REPORT}" >/dev/null
-
-echo
-echo "Reports:"
-echo "- .NET Minimal: ${DOTNET_MINIMAL_REPORT}"
-echo "- .NET DDD    : ${DOTNET_DDD_REPORT}"
-echo "- Python Minimal: ${PYTHON_MINIMAL_REPORT}"
-echo "- Python DDD    : ${PYTHON_DDD_REPORT}"
-echo
-
-"${PYTHON_BIN}" - "${DOTNET_MINIMAL_REPORT}" "${DOTNET_DDD_REPORT}" "${PYTHON_MINIMAL_REPORT}" "${PYTHON_DDD_REPORT}" <<'PY'
+"${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" "${REQUESTS}" "${CONCURRENCY}" "${WARMUP_REQUESTS}" "${TIMEOUT_SEC}" "${ROUNDS}" "${DOTNET_MINIMAL_URL}" "${DOTNET_DDD_URL}" "${PYTHON_MINIMAL_URL}" "${PYTHON_DDD_URL}" "${GO_MINIMAL_URL}" "${GO_DDD_URL}" <<'PY'
 import json
+import random
+import statistics
+import subprocess
 import sys
+from pathlib import Path
 
-dotnet_minimal_path, dotnet_ddd_path, python_minimal_path, python_ddd_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+(
+    python_bin,
+    script_dir,
+    reports_dir,
+    ts,
+    requests,
+    concurrency,
+    warmup_requests,
+    timeout_sec,
+    rounds,
+    dotnet_min_url,
+    dotnet_ddd_url,
+    python_min_url,
+    python_ddd_url,
+    go_min_url,
+    go_ddd_url,
+) = sys.argv[1:16]
 
-with open(dotnet_minimal_path, "r", encoding="utf-8") as f:
-    dotnet_minimal = json.load(f)
-with open(dotnet_ddd_path, "r", encoding="utf-8") as f:
-    dotnet_ddd = json.load(f)
-with open(python_minimal_path, "r", encoding="utf-8") as f:
-    python_minimal = json.load(f)
-with open(python_ddd_path, "r", encoding="utf-8") as f:
-    python_ddd = json.load(f)
+requests = int(requests)
+concurrency = int(concurrency)
+warmup_requests = int(warmup_requests)
+timeout_sec = float(timeout_sec)
+rounds = int(rounds)
 
-def row(name, data):
-    s = data["summary"]
-    l = data["latency_ms"]
-    return {
-        "name": name,
-        "throughput": s["throughput_req_per_sec"],
-        "success_rate": s["success_rate_pct"],
-        "p95": l["p95"],
-        "p99": l["p99"],
-        "avg": l["avg"],
-    }
-
-rows = [
-    row(".NET-Min", dotnet_minimal),
-    row(".NET-DDD", dotnet_ddd),
-    row("Py-Min", python_minimal),
-    row("Py-DDD", python_ddd),
+targets = [
+    ("dotnet-minimal", ".NET-Min", dotnet_min_url),
+    ("dotnet-ddd", ".NET-DDD", dotnet_ddd_url),
+    ("python-minimal", "Py-Min", python_min_url),
+    ("python-ddd", "Py-DDD", python_ddd_url),
+    ("go-minimal", "Go-Min", go_min_url),
+    ("go-ddd", "Go-DDD", go_ddd_url),
 ]
 
-print("Comparison (same load profile):")
+metrics = {
+    label: {"throughput": [], "success_rate": [], "avg": [], "p95": [], "p99": []}
+    for _, label, _ in targets
+}
+
+report_paths = []
+
+for round_idx in range(1, rounds + 1):
+    order = list(targets)
+    random.shuffle(order)
+    print(f"Round {round_idx}/{rounds} order: " + ", ".join(label for _, label, _ in order))
+    for key, label, url in order:
+        report_path = Path(reports_dir) / f"{key}-r{round_idx}-{ts}.json"
+        cmd = [
+            python_bin,
+            str(Path(script_dir) / "benchmark.py"),
+            "--url", url,
+            "--requests", str(requests),
+            "--concurrency", str(concurrency),
+            "--warmup-requests", str(warmup_requests),
+            "--timeout-sec", str(timeout_sec),
+            "--output-json", str(report_path),
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+        report_paths.append((label, str(report_path)))
+        with report_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        summary = data["summary"]
+        latency = data["latency_ms"]
+        metrics[label]["throughput"].append(float(summary["throughput_req_per_sec"]))
+        metrics[label]["success_rate"].append(float(summary["success_rate_pct"]))
+        metrics[label]["avg"].append(float(latency["avg"]))
+        metrics[label]["p95"].append(float(latency["p95"]))
+        metrics[label]["p99"].append(float(latency["p99"]))
+
+rows = []
+for _, label, _ in targets:
+    rows.append({
+        "name": label,
+        "throughput": round(statistics.median(metrics[label]["throughput"]), 2),
+        "success_rate": round(statistics.median(metrics[label]["success_rate"]), 2),
+        "avg": round(statistics.median(metrics[label]["avg"]), 2),
+        "p95": round(statistics.median(metrics[label]["p95"]), 2),
+        "p99": round(statistics.median(metrics[label]["p99"]), 2),
+    })
+
+print()
+print(f"Reports generated: {len(report_paths)} (directory: {reports_dir})")
+print("Comparison (median across rounds):")
 print(f"{'API':<8} {'Throughput':>12} {'Success%':>10} {'Avg ms':>10} {'P95 ms':>10} {'P99 ms':>10}")
-for r in rows:
-    print(f"{r['name']:<8} {r['throughput']:>12} {r['success_rate']:>10} {r['avg']:>10} {r['p95']:>10} {r['p99']:>10}")
+for row in rows:
+    print(f"{row['name']:<8} {row['throughput']:>12} {row['success_rate']:>10} {row['avg']:>10} {row['p95']:>10} {row['p99']:>10}")
 
 print()
 winner_thr = max(rows, key=lambda x: x["throughput"])["name"]

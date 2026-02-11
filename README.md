@@ -3,55 +3,65 @@
 Language-by-language API playground.
 
 ## Structure
-- `dot-net/`: .NET implementation
-- `python/`: Python implementation
+- `dot-net/`: .NET API implementation (`minimal` + `DDD`)
+- `python/`: Python API implementation (`minimal` + `DDD`)
+- `go/`: Go API implementation (`minimal` + `DDD`)
 - `benchmark-client/`: Python API benchmark client
 - `docker-compose.yml`: local PostgreSQL service
 
-## Run .NET API (Docker)
-```bash
-docker compose up -d --build dotnet-api
-curl http://localhost:5080/bills
-```
+## API Endpoints
+- .NET minimal: `GET http://localhost:5080/bills-minimal`
+- .NET DDD: `GET http://localhost:5080/bills`
+- Python minimal: `GET http://localhost:5081/bills-minimal`
+- Python DDD: `GET http://localhost:5081/bills`
+- Go minimal: `GET http://localhost:5082/bills-minimal`
+- Go DDD: `GET http://localhost:5082/bills`
 
-## Run Python API (Docker)
+## Start Services (Docker)
 ```bash
-docker compose up -d --build python-api
-curl http://localhost:5081/bills
+cp .env.example .env
+docker compose up -d --build postgres dotnet-api python-api go-api
 ```
-
-## Run PostgreSQL
-1. Copy env file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Start database:
-   ```bash
-   docker compose up -d postgres
-   ```
-3. Stop database:
-   ```bash
-   docker compose down
-   ```
 
 ## Seed Database
-1. Ensure Postgres is running on port `5440` (default from `.env.example`).
-2. Run the seed script:
-   ```bash
-   ./db/seed.sh
-   ```
+```bash
+./db/seed.sh
+```
 
-This creates `bill` and `bill_line`, then inserts:
+The seed creates `bill` and `bill_line`, then inserts:
 - 100 bills
 - 10-15 bill lines per bill
 
-## API Benchmark Client
-Use the Python benchmark client to compare endpoints across implementations.
+## Quick Smoke Test
+```bash
+curl http://localhost:5080/bills-minimal
+curl http://localhost:5080/bills
+curl http://localhost:5081/bills-minimal
+curl http://localhost:5081/bills
+curl http://localhost:5082/bills-minimal
+curl http://localhost:5082/bills
+```
+
+## Benchmark Comparison
+`run_compare.sh` benchmarks all four endpoints using the same load profile:
+- `.NET-Min`
+- `.NET-DDD`
+- `Py-Min`
+- `Py-DDD`
+- `Go-Min`
+- `Go-DDD`
 
 ```bash
 cd benchmark-client
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python benchmark.py --url http://localhost:8000/health --requests 200 --concurrency 20
+./run_compare.sh
+```
+
+Optional benchmark tuning:
+```bash
+REQUESTS=1000 CONCURRENCY=50 WARMUP_REQUESTS=50 ./run_compare.sh
+```
+
+## Stop Services
+```bash
+docker compose down
 ```

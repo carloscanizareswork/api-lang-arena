@@ -54,5 +54,27 @@ services:
       postgres:
         condition: service_healthy
 
+  go-api:
+    build:
+      context: ./go/BillsApi
+      dockerfile: Dockerfile
+    container_name: api-lang-arena-go-api
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
+      POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
+      GO_DB_MAX_OPEN_CONNS: 20
+      GO_DB_MAX_IDLE_CONNS: 10
+      GO_DB_CONN_MAX_LIFE_MS: 300000
+    ports:
+      - "${GO_API_PORT:-5082}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
