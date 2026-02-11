@@ -32,6 +32,8 @@ PYTHON_MINIMAL_URL="${PYTHON_MINIMAL_URL:-http://localhost:5081/bills-minimal}"
 PYTHON_DDD_URL="${PYTHON_DDD_URL:-http://localhost:5081/bills}"
 GO_MINIMAL_URL="${GO_MINIMAL_URL:-http://localhost:5082/bills-minimal}"
 GO_DDD_URL="${GO_DDD_URL:-http://localhost:5082/bills}"
+KOTLIN_MINIMAL_URL="${KOTLIN_MINIMAL_URL:-http://localhost:5083/bills-minimal}"
+KOTLIN_DDD_URL="${KOTLIN_DDD_URL:-http://localhost:5083/bills}"
 REQUESTS="${REQUESTS:-500}"
 CONCURRENCY="${CONCURRENCY:-25}"
 WARMUP_REQUESTS="${WARMUP_REQUESTS:-20}"
@@ -52,9 +54,10 @@ POST_DB_PASSWORD="${POST_DB_PASSWORD:-${POSTGRES_PASSWORD:-api_lang_password}}"
 POST_DOTNET_URL="${POST_DOTNET_URL:-http://localhost:5080/bills}"
 POST_PYTHON_URL="${POST_PYTHON_URL:-http://localhost:5081/bills}"
 POST_GO_URL="${POST_GO_URL:-http://localhost:5082/bills}"
+POST_KOTLIN_URL="${POST_KOTLIN_URL:-http://localhost:5083/bills}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
-"${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" "${REQUESTS}" "${CONCURRENCY}" "${WARMUP_REQUESTS}" "${TIMEOUT_SEC}" "${ROUNDS}" "${DOTNET_MINIMAL_URL}" "${DOTNET_DDD_URL}" "${PYTHON_MINIMAL_URL}" "${PYTHON_DDD_URL}" "${GO_MINIMAL_URL}" "${GO_DDD_URL}" <<'PY'
+"${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" "${REQUESTS}" "${CONCURRENCY}" "${WARMUP_REQUESTS}" "${TIMEOUT_SEC}" "${ROUNDS}" "${DOTNET_MINIMAL_URL}" "${DOTNET_DDD_URL}" "${PYTHON_MINIMAL_URL}" "${PYTHON_DDD_URL}" "${GO_MINIMAL_URL}" "${GO_DDD_URL}" "${KOTLIN_MINIMAL_URL}" "${KOTLIN_DDD_URL}" <<'PY'
 import json
 import random
 import statistics
@@ -78,7 +81,9 @@ from pathlib import Path
     python_ddd_url,
     go_min_url,
     go_ddd_url,
-) = sys.argv[1:16]
+    kotlin_min_url,
+    kotlin_ddd_url,
+) = sys.argv[1:18]
 
 requests = int(requests)
 concurrency = int(concurrency)
@@ -93,6 +98,8 @@ targets = [
     ("python-ddd", "Py-DDD", python_ddd_url),
     ("go-minimal", "Go-Min", go_min_url),
     ("go-ddd", "Go-DDD", go_ddd_url),
+    ("kotlin-minimal", "Kt-Min", kotlin_min_url),
+    ("kotlin-ddd", "Kt-DDD", kotlin_ddd_url),
 ]
 
 metrics = {
@@ -163,7 +170,7 @@ if [[ "${RUN_POST_BENCHMARK}" == "1" ]]; then
     "${POST_ROUNDS}" "${POST_REQUESTS}" "${POST_CONCURRENCY}" "${POST_TIMEOUT_SEC}" \
     "${POST_MIN_LINES}" "${POST_MAX_LINES}" "${POST_DB_HOST}" "${POST_DB_PORT}" \
     "${POST_DB_NAME}" "${POST_DB_USER}" "${POST_DB_PASSWORD}" \
-    "${POST_DOTNET_URL}" "${POST_PYTHON_URL}" "${POST_GO_URL}" <<'PY'
+    "${POST_DOTNET_URL}" "${POST_PYTHON_URL}" "${POST_GO_URL}" "${POST_KOTLIN_URL}" <<'PY'
 import json
 import random
 import statistics
@@ -190,7 +197,8 @@ from pathlib import Path
     dotnet_url,
     python_url,
     go_url,
-) = sys.argv[1:19]
+    kotlin_url,
+) = sys.argv[1:20]
 
 rounds = int(rounds)
 requests = int(requests)
@@ -203,6 +211,7 @@ targets = [
     ("dotnet-post", ".NET-Post", dotnet_url),
     ("python-post", "Py-Post", python_url),
     ("go-post", "Go-Post", go_url),
+    ("kotlin-post", "Kt-Post", kotlin_url),
 ]
 targets = [item for item in targets if item[2].strip()]
 

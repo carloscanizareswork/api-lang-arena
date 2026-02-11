@@ -75,3 +75,6 @@ build/
 
 # Benchmark artifacts
 benchmark-client/reports/
+
+# Gradle
+.gradle/

@@ -6,21 +6,28 @@ Language-by-language API playground.
 - `dot-net/`: .NET API implementation (`minimal` + `DDD`)
 - `python/`: Python API implementation (`minimal` + `DDD`)
 - `go/`: Go API implementation (`minimal` + `DDD`)
+- `kotlin/`: Kotlin API implementation (`minimal` + `DDD`)
 - `benchmark-client/`: Python API benchmark client
-- `docker-compose.yml`: local PostgreSQL service
+- `docker-compose.yml`: local PostgreSQL + RabbitMQ + APIs
 
 ## API Endpoints
 - .NET minimal: `GET http://localhost:5080/bills-minimal`
 - .NET DDD: `GET http://localhost:5080/bills`
+- .NET DDD POST: `POST http://localhost:5080/bills`
 - Python minimal: `GET http://localhost:5081/bills-minimal`
 - Python DDD: `GET http://localhost:5081/bills`
+- Python DDD POST: `POST http://localhost:5081/bills`
 - Go minimal: `GET http://localhost:5082/bills-minimal`
 - Go DDD: `GET http://localhost:5082/bills`
+- Go DDD POST: `POST http://localhost:5082/bills`
+- Kotlin minimal: `GET http://localhost:5083/bills-minimal`
+- Kotlin DDD: `GET http://localhost:5083/bills`
+- Kotlin DDD POST: `POST http://localhost:5083/bills`
 
 ## Start Services (Docker)
 ```bash
 cp .env.example .env
-docker compose up -d --build postgres dotnet-api python-api go-api
+docker compose up -d --build postgres rabbitmq dotnet-api python-api go-api kotlin-api
 ```
 
 ## Seed Database
@@ -40,16 +47,26 @@ curl http://localhost:5081/bills-minimal
 curl http://localhost:5081/bills
 curl http://localhost:5082/bills-minimal
 curl http://localhost:5082/bills
+curl http://localhost:5083/bills-minimal
+curl http://localhost:5083/bills
 ```
 
 ## Benchmark Comparison
-`run_compare.sh` benchmarks all four endpoints using the same load profile:
+`run_compare.sh` benchmarks all GET endpoints using the same load profile:
 - `.NET-Min`
 - `.NET-DDD`
 - `Py-Min`
 - `Py-DDD`
 - `Go-Min`
 - `Go-DDD`
+- `Kt-Min`
+- `Kt-DDD`
+
+It also benchmarks POST `/bills` for all configured languages:
+- `.NET-Post`
+- `Py-Post`
+- `Go-Post`
+- `Kt-Post`
 
 ```bash
 cd benchmark-client
