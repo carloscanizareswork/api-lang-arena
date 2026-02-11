@@ -5,10 +5,18 @@ import math
 import statistics
 import threading
 import time
+import warnings
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any, Optional
+
+# Suppress urllib3 LibreSSL runtime warning on macOS system Python.
+warnings.filterwarnings(
+    "ignore",
+    message=r"urllib3 v2 only supports OpenSSL 1\.1\.1\+",
+    category=Warning,
+)
 
 import requests
 

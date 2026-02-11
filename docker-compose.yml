@@ -79,10 +79,18 @@ services:
       PY_DB_MAX_OVERFLOW: 5
       PY_DB_POOL_TIMEOUT_SEC: 30
       PY_DB_POOL_RECYCLE_SEC: 1800
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      RABBITMQ_BILL_CREATED_QUEUE: ${RABBITMQ_BILL_CREATED_QUEUE:-bill-created}
     ports:
       - "${PYTHON_API_PORT:-5081}:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   go-api:

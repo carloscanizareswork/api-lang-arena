@@ -67,6 +67,7 @@ POST_PYTHON_URL=http://localhost:5081/bills \
 POST_GO_URL=http://localhost:5082/bills \
 ./run_compare.sh
 ```
+By default, POST comparison uses `POST_ROUNDS=5` with shuffled language order per round and reports median metrics.
 
 Custom URLs:
 ```bash
@@ -91,7 +92,7 @@ python benchmark.py \
 
 ## Dedicated POST benchmark runner
 ```bash
-python benchmark_dotnet_post.py \
+python benchmark_post.py \
   --name ".NET-Post" \
   --url http://localhost:5080/bills \
   --requests 10 \
@@ -106,6 +107,11 @@ python benchmark_dotnet_post.py \
 ```
 
 It generates unique `billNumber`/`customerName` values with a benchmark prefix, then deletes created rows after the run.
+
+Default POST targets in `run_compare.sh`:
+- `.NET`: enabled (`POST_DOTNET_URL=http://localhost:5080/bills`)
+- `Python`: enabled (`POST_PYTHON_URL=http://localhost:5081/bills`)
+- `Go`: disabled by default (set `POST_GO_URL` when endpoint exists)
 
 ## Metric caveat
 - GET metrics are useful for read-path comparison across stacks.

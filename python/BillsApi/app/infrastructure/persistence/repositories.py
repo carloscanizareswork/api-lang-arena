@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.application.bills.dtos import BillDto
 from app.application.bills.ports.bill_read_repository import BillReadRepository
+from app.application.bills.ports.bill_write_repository import BillWriteRepository
+from app.domain.bills.entities import NewBill
 from app.infrastructure.persistence.models import BillLineModel, BillModel
 
 
@@ -29,7 +31,7 @@ _LIST_BILLS_STMT = (
 )
 
 
-class SqlAlchemyBillRepository(BillReadRepository):
+class SqlAlchemyBillRepository(BillReadRepository, BillWriteRepository):
     def __init__(self, session: Session) -> None:
         self._session = session
 
@@ -45,3 +47,39 @@ class SqlAlchemyBillRepository(BillReadRepository):
             )
             for row in rows
         ]
+
+    def exists_by_bill_number(self, bill_number: str) -> bool:
+        stmt = select(BillModel.id).where(BillModel.bill_number == bill_number).limit(1)
+        return self._session.execute(stmt).first() is not None
+
+    def create(self, new_bill: NewBill) -> int:
+        try:
+            bill_row = BillModel(
+                bill_number=new_bill.bill_number,
+                issued_at=new_bill.issued_at,
+                customer_name=new_bill.customer_name,
+                subtotal=new_bill.subtotal,
+                tax=new_bill.tax,
+                currency=new_bill.currency,
+            )
+
+            self._session.add(bill_row)
+            self._session.flush()
+
+            line_rows = [
+                BillLineModel(
+                    bill_id=bill_row.id,
+                    line_no=idx,
+                    concept=line.concept,
+                    quantity=line.quantity,
+                    unit_amount=line.unit_amount,
+                    line_amount=line.line_amount,
+                )
+                for idx, line in enumerate(new_bill.lines, start=1)
+            ]
+            self._session.add_all(line_rows)
+            self._session.commit()
+            return int(bill_row.id)
+        except Exception:
+            self._session.rollback()
+            raise

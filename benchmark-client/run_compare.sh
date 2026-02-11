@@ -38,7 +38,7 @@ WARMUP_REQUESTS="${WARMUP_REQUESTS:-20}"
 TIMEOUT_SEC="${TIMEOUT_SEC:-10}"
 ROUNDS="${ROUNDS:-5}"
 RUN_POST_BENCHMARK="${RUN_POST_BENCHMARK:-1}"
-POST_ROUNDS="${POST_ROUNDS:-1}"
+POST_ROUNDS="${POST_ROUNDS:-5}"
 POST_REQUESTS="${POST_REQUESTS:-10}"
 POST_CONCURRENCY="${POST_CONCURRENCY:-5}"
 POST_TIMEOUT_SEC="${POST_TIMEOUT_SEC:-10}"
@@ -50,7 +50,7 @@ POST_DB_NAME="${POST_DB_NAME:-${POSTGRES_DB:-api_lang_arena}}"
 POST_DB_USER="${POST_DB_USER:-${POSTGRES_USER:-api_lang_user}}"
 POST_DB_PASSWORD="${POST_DB_PASSWORD:-${POSTGRES_PASSWORD:-api_lang_password}}"
 POST_DOTNET_URL="${POST_DOTNET_URL:-http://localhost:5080/bills}"
-POST_PYTHON_URL="${POST_PYTHON_URL:-}"
+POST_PYTHON_URL="${POST_PYTHON_URL:-http://localhost:5081/bills}"
 POST_GO_URL="${POST_GO_URL:-}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
@@ -224,7 +224,7 @@ for round_idx in range(1, rounds + 1):
         prefix = f"BENCH-{key.upper()}-{ts}-R{round_idx}"
         cmd = [
             python_bin,
-            str(Path(script_dir) / "benchmark_dotnet_post.py"),
+            str(Path(script_dir) / "benchmark_post.py"),
             "--name", label,
             "--url", url,
             "--requests", str(requests),
