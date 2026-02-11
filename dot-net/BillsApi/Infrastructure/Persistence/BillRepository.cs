@@ -9,6 +9,7 @@ public sealed class BillRepository(ArenaDbContext dbContext) : IBillRepository
     {
         return await dbContext.Bills
             .AsNoTracking()
+            .Include(x => x.Lines)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
     }

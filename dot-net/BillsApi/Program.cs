@@ -13,6 +13,7 @@ builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
 builder.Services.AddDbContext<ArenaDbContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IBillRepository, BillRepository>();
+builder.Services.AddScoped<IGetBillsReadRepository, GetBillsReadRepository>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetBillsQuery).Assembly));
 

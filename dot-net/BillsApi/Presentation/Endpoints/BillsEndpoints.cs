@@ -11,9 +11,15 @@ public static class BillsEndpoints
         app.MapGet("/bills-minimal", async (NpgsqlDataSource dataSource, CancellationToken ct) =>
         {
             const string sql = """
-                SELECT id, bill_number, issued_at, total, currency
-                FROM bill
-                ORDER BY id;
+                SELECT b.id,
+                       b.bill_number,
+                       b.issued_at,
+                       COALESCE(SUM(bl.line_amount), 0) + b.tax AS total,
+                       b.currency
+                FROM bill b
+                LEFT JOIN bill_line bl ON bl.bill_id = b.id
+                GROUP BY b.id, b.bill_number, b.issued_at, b.tax, b.currency
+                ORDER BY b.id;
                 """;
 
             var bills = new List<BillDto>();

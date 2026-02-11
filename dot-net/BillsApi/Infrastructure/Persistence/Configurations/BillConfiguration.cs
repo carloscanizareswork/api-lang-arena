@@ -16,12 +16,7 @@ public sealed class BillConfiguration : IEntityTypeConfiguration<Bill>
         builder.Property(x => x.IssuedAt).HasColumnName("issued_at").IsRequired();
         builder.Property(x => x.Subtotal).HasColumnName("subtotal").HasPrecision(12, 2);
         builder.Property(x => x.Tax).HasColumnName("tax").HasPrecision(12, 2);
-
-        builder.OwnsOne(x => x.Total, money =>
-        {
-            money.Property(x => x.Amount).HasColumnName("total").HasPrecision(12, 2).IsRequired();
-            money.Property(x => x.Currency).HasColumnName("currency").HasMaxLength(3).IsRequired();
-        });
+        builder.Property(x => x.Currency).HasColumnName("currency").HasMaxLength(3).IsRequired();
 
         builder.HasMany(x => x.Lines)
             .WithOne()

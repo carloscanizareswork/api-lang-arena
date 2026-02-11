@@ -1,20 +1,10 @@
 from app.application.bills.dtos import BillDto
-from app.domain.bills.repositories import BillRepository
+from app.application.bills.ports.bill_read_repository import BillReadRepository
 
 
 class ListBillsUseCase:
-    def __init__(self, bill_repository: BillRepository) -> None:
+    def __init__(self, bill_repository: BillReadRepository) -> None:
         self._bill_repository = bill_repository
 
     def execute(self) -> list[BillDto]:
-        bills = self._bill_repository.list()
-        return [
-            BillDto(
-                id=b.id,
-                bill_number=b.bill_number,
-                issued_at=b.issued_at,
-                total=float(b.total.amount),
-                currency=b.total.currency,
-            )
-            for b in bills
-        ]
+        return self._bill_repository.list()

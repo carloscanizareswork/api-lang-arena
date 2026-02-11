@@ -21,15 +21,17 @@ func (r *BillRepository) List(ctx context.Context) ([]bill.Bill, error) {
 		ID         int64     `gorm:"column:id"`
 		BillNumber string    `gorm:"column:bill_number"`
 		IssuedAt   time.Time `gorm:"column:issued_at"`
-		Total      float64   `gorm:"column:total"`
+		ComputedTotal float64 `gorm:"column:computed_total"`
 		Currency   string    `gorm:"column:currency"`
 	}
 
 	var rows []billRow
 	if err := r.db.WithContext(ctx).
 		Table("bill").
-		Select("id, bill_number, issued_at, total, currency").
-		Order("id").
+		Select("bill.id, bill.bill_number, bill.issued_at, COALESCE(SUM(bl.line_amount), 0) + bill.tax AS computed_total, bill.currency").
+		Joins("LEFT JOIN bill_line bl ON bl.bill_id = bill.id").
+		Group("bill.id, bill.bill_number, bill.issued_at, bill.tax, bill.currency").
+		Order("bill.id").
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -41,7 +43,7 @@ func (r *BillRepository) List(ctx context.Context) ([]bill.Bill, error) {
 			BillNumber: row.BillNumber,
 			IssuedAt:   row.IssuedAt,
 			Total: bill.Money{
-				Amount:   row.Total,
+				Amount:   row.ComputedTotal,
 				Currency: row.Currency,
 			},
 		})

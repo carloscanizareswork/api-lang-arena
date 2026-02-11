@@ -6,9 +6,10 @@ CREATE TABLE IF NOT EXISTS bill (
   currency CHAR(3) NOT NULL DEFAULT 'USD',
   subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
   tax NUMERIC(12,2) NOT NULL DEFAULT 0,
-  total NUMERIC(12,2) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE bill DROP COLUMN IF EXISTS total;
 
 CREATE TABLE IF NOT EXISTS bill_line (
   id BIGSERIAL PRIMARY KEY,
@@ -84,8 +85,7 @@ BEGIN
 
     UPDATE bill
     SET subtotal = v_subtotal,
-        tax = v_tax,
-        total = round(v_subtotal + v_tax, 2)
+        tax = v_tax
     WHERE id = v_bill_id;
   END LOOP;
 END $$;
