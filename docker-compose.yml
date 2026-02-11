@@ -181,5 +181,33 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  java-api:
+    build:
+      context: ./java/BillsApi
+      dockerfile: Dockerfile
+    container_name: api-lang-arena-java-api
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
+      POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
+      JA_DB_MAX_POOL_SIZE: 6
+      JA_DB_MIN_IDLE: 1
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      RABBITMQ_BILL_CREATED_QUEUE: ${RABBITMQ_BILL_CREATED_QUEUE:-bill-created}
+    ports:
+      - "${JAVA_API_PORT:-5085}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   postgres_data:

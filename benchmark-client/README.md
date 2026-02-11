@@ -39,9 +39,11 @@ Runs all APIs with the same load profile and prints a side-by-side summary:
 - `Kotlin DDD`: `/bills`
 - `Node Minimal`: `/bills-minimal`
 - `Node DDD`: `/bills`
+- `Java Minimal`: `/bills-minimal`
+- `Java DDD`: `/bills`
 
 `run_compare.sh` executes multiple rounds with randomized endpoint order and reports median GET metrics.
-It can also run POST benchmarks in table format across configured targets (`.NET`, `Python`, `Go`, `Kotlin`, `Node`), creating tagged bills and auto-cleaning them.
+It can also run POST benchmarks in table format across configured targets (`.NET`, `Python`, `Go`, `Kotlin`, `Node`, `Java`), creating tagged bills and auto-cleaning them.
 
 ```bash
 ./run_compare.sh
@@ -71,6 +73,7 @@ POST_PYTHON_URL=http://localhost:5081/bills \
 POST_GO_URL=http://localhost:5082/bills \
 POST_KOTLIN_URL=http://localhost:5083/bills \
 POST_NODE_URL=http://localhost:5084/bills \
+POST_JAVA_URL=http://localhost:5085/bills \
 ./run_compare.sh
 ```
 By default, POST comparison uses `POST_ROUNDS=5` with shuffled language order per round and reports median metrics.
@@ -87,6 +90,8 @@ KOTLIN_MINIMAL_URL=http://localhost:5083/bills-minimal \
 KOTLIN_DDD_URL=http://localhost:5083/bills \
 NODE_MINIMAL_URL=http://localhost:5084/bills-minimal \
 NODE_DDD_URL=http://localhost:5084/bills \
+JAVA_MINIMAL_URL=http://localhost:5085/bills-minimal \
+JAVA_DDD_URL=http://localhost:5085/bills \
 ./run_compare.sh
 ```
 
@@ -124,6 +129,7 @@ Default POST targets in `run_compare.sh`:
 - `Go`: enabled (`POST_GO_URL=http://localhost:5082/bills`)
 - `Kotlin`: enabled (`POST_KOTLIN_URL=http://localhost:5083/bills`)
 - `Node`: enabled (`POST_NODE_URL=http://localhost:5084/bills`)
+- `Java`: enabled (`POST_JAVA_URL=http://localhost:5085/bills`)
 
 ## Metric caveat
 - GET metrics are useful for read-path comparison across stacks.

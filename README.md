@@ -8,6 +8,7 @@ Language-by-language API playground.
 - `go/`: Go API implementation (`minimal` + `DDD`)
 - `kotlin/`: Kotlin API implementation (`minimal` + `DDD`)
 - `node-ts/`: Node + TypeScript API implementation (`minimal` + `DDD`)
+- `java/`: Java API implementation (`minimal` + `DDD`)
 - `benchmark-client/`: Python API benchmark client
 - `docker-compose.yml`: local PostgreSQL + RabbitMQ + APIs
 
@@ -27,11 +28,14 @@ Language-by-language API playground.
 - Node minimal: `GET http://localhost:5084/bills-minimal`
 - Node DDD: `GET http://localhost:5084/bills`
 - Node DDD POST: `POST http://localhost:5084/bills`
+- Java minimal: `GET http://localhost:5085/bills-minimal`
+- Java DDD: `GET http://localhost:5085/bills`
+- Java DDD POST: `POST http://localhost:5085/bills`
 
 ## Start Services (Docker)
 ```bash
 cp .env.example .env
-docker compose up -d --build postgres rabbitmq dotnet-api python-api go-api kotlin-api node-api
+docker compose up -d --build postgres rabbitmq dotnet-api python-api go-api kotlin-api node-api java-api
 ```
 
 ## Seed Database
@@ -55,6 +59,8 @@ curl http://localhost:5083/bills-minimal
 curl http://localhost:5083/bills
 curl http://localhost:5084/bills-minimal
 curl http://localhost:5084/bills
+curl http://localhost:5085/bills-minimal
+curl http://localhost:5085/bills
 ```
 
 ## Benchmark Comparison
@@ -69,6 +75,8 @@ curl http://localhost:5084/bills
 - `Kt-DDD`
 - `Node-Min`
 - `Node-DDD`
+- `Java-Min`
+- `Java-DDD`
 
 It also benchmarks POST `/bills` for all configured languages:
 - `.NET-Post`
@@ -76,6 +84,7 @@ It also benchmarks POST `/bills` for all configured languages:
 - `Go-Post`
 - `Kt-Post`
 - `Node-Post`
+- `Java-Post`
 
 ```bash
 cd benchmark-client
