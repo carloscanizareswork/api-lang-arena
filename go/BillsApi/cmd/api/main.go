@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	gormpg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	billcreate "go-bills-api/internal/application/bill/create"
 	billlist "go-bills-api/internal/application/bill/list"
+	rabbitmqinfra "go-bills-api/internal/infrastructure/messaging/rabbitmq"
 	"go-bills-api/internal/infrastructure/postgres"
 	httpapi "go-bills-api/internal/interfaces/http"
 )
@@ -28,6 +32,12 @@ type config struct {
 	dbMaxOpenConns  int
 	dbMaxIdleConns  int
 	dbConnMaxLifeMs int
+	rabbitHost      string
+	rabbitPort      string
+	rabbitUser      string
+	rabbitPassword  string
+	rabbitVHost     string
+	rabbitQueue     string
 }
 
 func main() {
@@ -67,8 +77,24 @@ func main() {
 	}
 
 	repo := postgres.NewBillRepository(gormDB)
-	service := billlist.NewService(repo)
-	handler := httpapi.NewHandler(db, service)
+	listService := billlist.NewService(repo)
+
+	rabbitURL := buildRabbitURL(cfg)
+	publisher, err := rabbitmqinfra.NewPublisher(rabbitmqinfra.Options{
+		URL:       rabbitURL,
+		QueueName: cfg.rabbitQueue,
+	})
+	if err != nil {
+		log.Fatalf("init rabbitmq publisher: %v", err)
+	}
+	defer func() {
+		if err := publisher.Close(); err != nil {
+			log.Printf("close rabbitmq publisher: %v", err)
+		}
+	}()
+
+	createService := billcreate.NewService(repo, publisher)
+	handler := httpapi.NewHandler(db, listService, createService)
 
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
@@ -96,7 +122,31 @@ func loadConfig() config {
 		dbMaxOpenConns:  envInt("GO_DB_MAX_OPEN_CONNS", 20),
 		dbMaxIdleConns:  envInt("GO_DB_MAX_IDLE_CONNS", 10),
 		dbConnMaxLifeMs: envInt("GO_DB_CONN_MAX_LIFE_MS", 300000),
+		rabbitHost:      env("RABBITMQ_HOST", "localhost"),
+		rabbitPort:      env("RABBITMQ_PORT", "5672"),
+		rabbitUser:      env("RABBITMQ_USER", "guest"),
+		rabbitPassword:  env("RABBITMQ_PASSWORD", "guest"),
+		rabbitVHost:     env("RABBITMQ_VHOST", "/"),
+		rabbitQueue:     env("RABBITMQ_BILL_CREATED_QUEUE", "bill-created"),
 	}
+}
+
+func buildRabbitURL(cfg config) string {
+	user := url.QueryEscape(cfg.rabbitUser)
+	password := url.QueryEscape(cfg.rabbitPassword)
+	encodedVHost := "%2F"
+	if cfg.rabbitVHost != "" && cfg.rabbitVHost != "/" {
+		vhost := strings.TrimPrefix(cfg.rabbitVHost, "/")
+		encodedVHost = url.PathEscape(vhost)
+	}
+	return fmt.Sprintf(
+		"amqp://%s:%s@%s:%s/%s",
+		user,
+		password,
+		cfg.rabbitHost,
+		cfg.rabbitPort,
+		encodedVHost,
+	)
 }
 
 func env(key string, defaultValue string) string {

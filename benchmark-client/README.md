@@ -111,7 +111,7 @@ It generates unique `billNumber`/`customerName` values with a benchmark prefix, 
 Default POST targets in `run_compare.sh`:
 - `.NET`: enabled (`POST_DOTNET_URL=http://localhost:5080/bills`)
 - `Python`: enabled (`POST_PYTHON_URL=http://localhost:5081/bills`)
-- `Go`: disabled by default (set `POST_GO_URL` when endpoint exists)
+- `Go`: enabled (`POST_GO_URL=http://localhost:5082/bills`)
 
 ## Metric caveat
 - GET metrics are useful for read-path comparison across stacks.

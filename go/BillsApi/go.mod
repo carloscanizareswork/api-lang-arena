@@ -7,6 +7,7 @@ toolchain go1.23.12
 require github.com/jackc/pgx/v5 v5.7.6
 
 require (
+	github.com/rabbitmq/amqp091-go v1.10.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
