@@ -16,8 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = BuildConnectionString(builder.Configuration);
 
-builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
-builder.Services.AddDbContext<ArenaDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddSingleton(_ => new NpgsqlDataSourceBuilder(connectionString).Build());
+builder.Services.AddDbContext<ArenaDbContext>((sp, options) =>
+    options.UseNpgsql(sp.GetRequiredService<NpgsqlDataSource>()));
 
 builder.Services.AddScoped<IBillRepository, BillRepository>();
 builder.Services.AddScoped<IGetBillsReadRepository, GetBillsReadRepository>();
@@ -46,8 +47,10 @@ static string BuildConnectionString(IConfiguration configuration)
     var db = configuration["POSTGRES_DB"] ?? "api_lang_arena";
     var user = configuration["POSTGRES_USER"] ?? "api_lang_user";
     var password = configuration["POSTGRES_PASSWORD"] ?? "api_lang_password";
+    var poolMinSize = configuration["DOTNET_DB_POOL_MIN_SIZE"] ?? "1";
+    var poolMaxSize = configuration["DOTNET_DB_POOL_MAX_SIZE"] ?? "8";
 
-    return $"Host={host};Port={port};Database={db};Username={user};Password={password}";
+    return $"Host={host};Port={port};Database={db};Username={user};Password={password};Minimum Pool Size={poolMinSize};Maximum Pool Size={poolMaxSize}";
 }
 
 static RabbitMqOptions BuildRabbitMqOptions(IConfiguration configuration)

@@ -78,3 +78,8 @@ benchmark-client/reports/
 
 # Gradle
 .gradle/
+
+# Node.js
+node_modules/
+dist/
+*.tsbuildinfo

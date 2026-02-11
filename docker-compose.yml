@@ -47,6 +47,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
       POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
+      DOTNET_DB_POOL_MIN_SIZE: 1
+      DOTNET_DB_POOL_MAX_SIZE: 8
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
@@ -74,9 +76,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
       POSTGRES_POOL_MIN_SIZE: 1
-      POSTGRES_POOL_MAX_SIZE: 10
-      PY_DB_POOL_SIZE: 10
-      PY_DB_MAX_OVERFLOW: 5
+      POSTGRES_POOL_MAX_SIZE: 6
+      PY_DB_POOL_SIZE: 6
+      PY_DB_MAX_OVERFLOW: 0
       PY_DB_POOL_TIMEOUT_SEC: 30
       PY_DB_POOL_RECYCLE_SEC: 1800
       RABBITMQ_HOST: rabbitmq
@@ -106,8 +108,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
       POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
-      GO_DB_MAX_OPEN_CONNS: 20
-      GO_DB_MAX_IDLE_CONNS: 10
+      GO_DB_MAX_OPEN_CONNS: 8
+      GO_DB_MAX_IDLE_CONNS: 4
       GO_DB_CONN_MAX_LIFE_MS: 300000
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -135,8 +137,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
       POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
-      KT_DB_MAX_POOL_SIZE: 10
-      KT_DB_MIN_IDLE: 2
+      KT_DB_MAX_POOL_SIZE: 6
+      KT_DB_MIN_IDLE: 1
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
@@ -145,6 +147,34 @@ services:
       RABBITMQ_BILL_CREATED_QUEUE: ${RABBITMQ_BILL_CREATED_QUEUE:-bill-created}
     ports:
       - "${KOTLIN_API_PORT:-5083}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  node-api:
+    build:
+      context: ./node-ts/BillsApi
+      dockerfile: Dockerfile
+    container_name: api-lang-arena-node-api
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-api_lang_arena}
+      POSTGRES_USER: ${POSTGRES_USER:-api_lang_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-api_lang_password}
+      NODE_DB_MAX_POOL_SIZE: 6
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      RABBITMQ_BILL_CREATED_QUEUE: ${RABBITMQ_BILL_CREATED_QUEUE:-bill-created}
+    ports:
+      - "${NODE_API_PORT:-5084}:8080"
     depends_on:
       postgres:
         condition: service_healthy
