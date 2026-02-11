@@ -55,3 +55,23 @@ nunit-*.xml
 
 # Local env
 .env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Benchmark artifacts
+benchmark-client/reports/

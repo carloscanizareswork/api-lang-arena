@@ -5,7 +5,20 @@ Language-by-language API playground.
 ## Structure
 - `dot-net/`: .NET implementation
 - `python/`: Python implementation
+- `benchmark-client/`: Python API benchmark client
 - `docker-compose.yml`: local PostgreSQL service
+
+## Run .NET API (Docker)
+```bash
+docker compose up -d --build dotnet-api
+curl http://localhost:5080/bills
+```
+
+## Run Python API (Docker)
+```bash
+docker compose up -d --build python-api
+curl http://localhost:5081/bills
+```
 
 ## Run PostgreSQL
 1. Copy env file:
@@ -31,3 +44,14 @@ Language-by-language API playground.
 This creates `bill` and `bill_line`, then inserts:
 - 100 bills
 - 10-15 bill lines per bill
+
+## API Benchmark Client
+Use the Python benchmark client to compare endpoints across implementations.
+
+```bash
+cd benchmark-client
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python benchmark.py --url http://localhost:8000/health --requests 200 --concurrency 20
+```
