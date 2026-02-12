@@ -41,9 +41,11 @@ Runs all APIs with the same load profile and prints a side-by-side summary:
 - `Node DDD`: `/bills`
 - `Java Minimal`: `/bills-minimal`
 - `Java DDD`: `/bills`
+- `Rust Minimal`: `/bills-minimal`
+- `Rust DDD`: `/bills`
 
 `run_compare.sh` executes multiple rounds with randomized endpoint order and reports median GET metrics.
-It can also run POST benchmarks in table format across configured targets (`.NET`, `Python`, `Go`, `Kotlin`, `Node`, `Java`), creating tagged bills and auto-cleaning them.
+It can also run POST benchmarks in table format across configured targets (`.NET`, `Python`, `Go`, `Kotlin`, `Node`, `Java`, `Rust`), creating tagged bills and auto-cleaning them.
 
 ```bash
 ./run_compare.sh
@@ -74,6 +76,7 @@ POST_GO_URL=http://localhost:5082/bills \
 POST_KOTLIN_URL=http://localhost:5083/bills \
 POST_NODE_URL=http://localhost:5084/bills \
 POST_JAVA_URL=http://localhost:5085/bills \
+POST_RUST_URL=http://localhost:5086/bills \
 ./run_compare.sh
 ```
 By default, POST comparison uses `POST_ROUNDS=5` with shuffled language order per round and reports median metrics.
@@ -92,6 +95,8 @@ NODE_MINIMAL_URL=http://localhost:5084/bills-minimal \
 NODE_DDD_URL=http://localhost:5084/bills \
 JAVA_MINIMAL_URL=http://localhost:5085/bills-minimal \
 JAVA_DDD_URL=http://localhost:5085/bills \
+RUST_MINIMAL_URL=http://localhost:5086/bills-minimal \
+RUST_DDD_URL=http://localhost:5086/bills \
 ./run_compare.sh
 ```
 
@@ -130,6 +135,7 @@ Default POST targets in `run_compare.sh`:
 - `Kotlin`: enabled (`POST_KOTLIN_URL=http://localhost:5083/bills`)
 - `Node`: enabled (`POST_NODE_URL=http://localhost:5084/bills`)
 - `Java`: enabled (`POST_JAVA_URL=http://localhost:5085/bills`)
+- `Rust`: enabled (`POST_RUST_URL=http://localhost:5086/bills`)
 
 ## Metric caveat
 - GET metrics are useful for read-path comparison across stacks.

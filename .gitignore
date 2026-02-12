@@ -83,3 +83,6 @@ benchmark-client/reports/
 node_modules/
 dist/
 *.tsbuildinfo
+
+# Rust
+target/

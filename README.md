@@ -9,6 +9,7 @@ Language-by-language API playground.
 - `kotlin/`: Kotlin API implementation (`minimal` + `DDD`)
 - `node-ts/`: Node + TypeScript API implementation (`minimal` + `DDD`)
 - `java/`: Java API implementation (`minimal` + `DDD`)
+- `rust/`: Rust API implementation (`minimal` + `DDD`)
 - `benchmark-client/`: Python API benchmark client
 - `docker-compose.yml`: local PostgreSQL + RabbitMQ + APIs
 
@@ -31,11 +32,14 @@ Language-by-language API playground.
 - Java minimal: `GET http://localhost:5085/bills-minimal`
 - Java DDD: `GET http://localhost:5085/bills`
 - Java DDD POST: `POST http://localhost:5085/bills`
+- Rust minimal: `GET http://localhost:5086/bills-minimal`
+- Rust DDD: `GET http://localhost:5086/bills`
+- Rust DDD POST: `POST http://localhost:5086/bills`
 
 ## Start Services (Docker)
 ```bash
 cp .env.example .env
-docker compose up -d --build postgres rabbitmq dotnet-api python-api go-api kotlin-api node-api java-api
+docker compose up -d --build postgres rabbitmq dotnet-api python-api go-api kotlin-api node-api java-api rust-api
 ```
 
 ## Seed Database
@@ -61,6 +65,8 @@ curl http://localhost:5084/bills-minimal
 curl http://localhost:5084/bills
 curl http://localhost:5085/bills-minimal
 curl http://localhost:5085/bills
+curl http://localhost:5086/bills-minimal
+curl http://localhost:5086/bills
 ```
 
 ## Benchmark Comparison
@@ -77,6 +83,8 @@ curl http://localhost:5085/bills
 - `Node-DDD`
 - `Java-Min`
 - `Java-DDD`
+- `Rust-Min`
+- `Rust-DDD`
 
 It also benchmarks POST `/bills` for all configured languages:
 - `.NET-Post`
@@ -85,6 +93,7 @@ It also benchmarks POST `/bills` for all configured languages:
 - `Kt-Post`
 - `Node-Post`
 - `Java-Post`
+- `Rust-Post`
 
 ```bash
 cd benchmark-client

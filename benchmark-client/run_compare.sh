@@ -38,6 +38,8 @@ NODE_MINIMAL_URL="${NODE_MINIMAL_URL:-http://localhost:5084/bills-minimal}"
 NODE_DDD_URL="${NODE_DDD_URL:-http://localhost:5084/bills}"
 JAVA_MINIMAL_URL="${JAVA_MINIMAL_URL:-http://localhost:5085/bills-minimal}"
 JAVA_DDD_URL="${JAVA_DDD_URL:-http://localhost:5085/bills}"
+RUST_MINIMAL_URL="${RUST_MINIMAL_URL:-http://localhost:5086/bills-minimal}"
+RUST_DDD_URL="${RUST_DDD_URL:-http://localhost:5086/bills}"
 REQUESTS="${REQUESTS:-500}"
 CONCURRENCY="${CONCURRENCY:-25}"
 WARMUP_REQUESTS="${WARMUP_REQUESTS:-20}"
@@ -61,9 +63,10 @@ POST_GO_URL="${POST_GO_URL:-http://localhost:5082/bills}"
 POST_KOTLIN_URL="${POST_KOTLIN_URL:-http://localhost:5083/bills}"
 POST_NODE_URL="${POST_NODE_URL:-http://localhost:5084/bills}"
 POST_JAVA_URL="${POST_JAVA_URL:-http://localhost:5085/bills}"
+POST_RUST_URL="${POST_RUST_URL:-http://localhost:5086/bills}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
-"${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" "${REQUESTS}" "${CONCURRENCY}" "${WARMUP_REQUESTS}" "${TIMEOUT_SEC}" "${ROUNDS}" "${DOTNET_MINIMAL_URL}" "${DOTNET_DDD_URL}" "${PYTHON_MINIMAL_URL}" "${PYTHON_DDD_URL}" "${GO_MINIMAL_URL}" "${GO_DDD_URL}" "${KOTLIN_MINIMAL_URL}" "${KOTLIN_DDD_URL}" "${NODE_MINIMAL_URL}" "${NODE_DDD_URL}" "${JAVA_MINIMAL_URL}" "${JAVA_DDD_URL}" <<'PY'
+"${PYTHON_BIN}" - "${PYTHON_BIN}" "${SCRIPT_DIR}" "${REPORTS_DIR}" "${TS}" "${REQUESTS}" "${CONCURRENCY}" "${WARMUP_REQUESTS}" "${TIMEOUT_SEC}" "${ROUNDS}" "${DOTNET_MINIMAL_URL}" "${DOTNET_DDD_URL}" "${PYTHON_MINIMAL_URL}" "${PYTHON_DDD_URL}" "${GO_MINIMAL_URL}" "${GO_DDD_URL}" "${KOTLIN_MINIMAL_URL}" "${KOTLIN_DDD_URL}" "${NODE_MINIMAL_URL}" "${NODE_DDD_URL}" "${JAVA_MINIMAL_URL}" "${JAVA_DDD_URL}" "${RUST_MINIMAL_URL}" "${RUST_DDD_URL}" <<'PY'
 import json
 import random
 import statistics
@@ -93,7 +96,9 @@ from pathlib import Path
     node_ddd_url,
     java_min_url,
     java_ddd_url,
-) = sys.argv[1:22]
+    rust_min_url,
+    rust_ddd_url,
+) = sys.argv[1:24]
 
 requests = int(requests)
 concurrency = int(concurrency)
@@ -114,6 +119,8 @@ targets = [
     ("node-ddd", "Node-DDD", node_ddd_url),
     ("java-minimal", "Java-Min", java_min_url),
     ("java-ddd", "Java-DDD", java_ddd_url),
+    ("rust-minimal", "Rust-Min", rust_min_url),
+    ("rust-ddd", "Rust-DDD", rust_ddd_url),
 ]
 
 metrics = {
@@ -184,7 +191,7 @@ if [[ "${RUN_POST_BENCHMARK}" == "1" ]]; then
     "${POST_ROUNDS}" "${POST_REQUESTS}" "${POST_CONCURRENCY}" "${POST_TIMEOUT_SEC}" \
     "${POST_MIN_LINES}" "${POST_MAX_LINES}" "${POST_DB_HOST}" "${POST_DB_PORT}" \
   "${POST_DB_NAME}" "${POST_DB_USER}" "${POST_DB_PASSWORD}" \
-    "${POST_DOTNET_URL}" "${POST_PYTHON_URL}" "${POST_GO_URL}" "${POST_KOTLIN_URL}" "${POST_NODE_URL}" "${POST_JAVA_URL}" <<'PY'
+    "${POST_DOTNET_URL}" "${POST_PYTHON_URL}" "${POST_GO_URL}" "${POST_KOTLIN_URL}" "${POST_NODE_URL}" "${POST_JAVA_URL}" "${POST_RUST_URL}" <<'PY'
 import json
 import random
 import statistics
@@ -214,7 +221,8 @@ from pathlib import Path
     kotlin_url,
     node_url,
     java_url,
-) = sys.argv[1:22]
+    rust_url,
+) = sys.argv[1:23]
 
 rounds = int(rounds)
 requests = int(requests)
@@ -230,6 +238,7 @@ targets = [
     ("kotlin-post", "Kt-Post", kotlin_url),
     ("node-post", "Node-Post", node_url),
     ("java-post", "Java-Post", java_url),
+    ("rust-post", "Rust-Post", rust_url),
 ]
 targets = [item for item in targets if item[2].strip()]
 
